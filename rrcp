@@ -95,8 +95,14 @@ else
   cmd_copy="${cmd_copy} --dry-run"
 fi
 
-cmd_copy="${cmd_common} ${cmd_copy} $@"
-cmd_check="${cmd_common} ${cmd_out_format} --info=all0 --whole-file --dry-run $@"
+# Quote each argument in "$@"
+quoted_args=()
+for arg in "$@"; do
+  quoted_args+=("\"$arg\"")
+done
+
+cmd_copy="${cmd_common} ${cmd_copy} ${quoted_args[@]}"
+cmd_check="${cmd_common} ${cmd_out_format} --info=all0 --whole-file --dry-run ${quoted_args[@]}"
 
 if ${opt_print}; then
   echo "Copy:"
