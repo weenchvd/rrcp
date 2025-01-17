@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# Function to display usage instructions
+usage() {
+  echo "RRCP - rsync copier with checksum verification"
+  echo "Usage: $(basename $0) [-cxqutdP] SRC [SRC]... DEST"
+  echo ""
+  echo "Options:"
+  echo "  -c        clone (mirror)"
+  echo "  -x        use delta-xfer algorithm"
+  echo "  -q        quiet (less output)"
+  echo "  -u        mention unchanged names (more output)"
+  echo "  -t        without test (without post-check)"
+  echo "  -d        do (disable DRY RUN)"
+  echo "  -P        print rsync command, do nothing"
+}
+
+# Initialize variables
+opt_clone=false
+opt_whole_file=true
+opt_quiet=false
+opt_unchanged=false
+opt_test=true
+opt_do=false
+opt_print=false
+
+# Process command line options using getopts
+while getopts ":cxqutdP" opt; do
+  case ${opt} in
+    c) opt_clone=true ;;
+    x) opt_whole_file=false ;;
+    q) opt_quiet=true ;;
+    u) opt_unchanged=true ;;
+    t) opt_test=false ;;
+    d) opt_do=true ;;
+    P) opt_print=true ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+# Shift the options
+shift $((OPTIND - 1))
+
+# Check if two arguments or more are provided after options processing
+if [ "$#" -lt 2 ]; then
+  echo "Error: This script requires two arguments or more." >&2
+  usage
+  exit 1
+fi
+
+# Assign the arguments to variables
+rsync_log_dir="/var/log/rsync"
+
+cmd_common="rsync -ach --checksum-choice=xxh128"
+cmd_out_format="--out-format=\"%i %8'''l %n%L\""
+
+cmd_copy=""
+cmd_copy_info="--info=flist0"
+
+# Process arguments and options
+if [ ! -d "${rsync_log_dir}" ]; then
+    sudo mkdir -p "${rsync_log_dir}"
+    sudo chmod go+w "${rsync_log_dir}"
+fi
+
+if ${opt_clone}; then
+  cmd_common="${cmd_common} --delete"
+else
+  cmd_common="${cmd_common} --no-D"
+fi
+
+if ${opt_quiet}; then
+  cmd_copy_info="${cmd_copy_info},name0,progress2,stats1"
+else
+  if ${opt_unchanged}; then
+    cmd_copy_info="${cmd_copy_info},name2"
+  else
+    cmd_copy_info="${cmd_copy_info},name1"
+  fi
+  cmd_copy_info="${cmd_copy_info},progress1,stats2 ${cmd_out_format}"
+fi
+
+if ${opt_whole_file}; then
+  cmd_copy="${cmd_copy_info} --whole-file"
+else
+  cmd_copy="${cmd_copy_info}"
+fi
+
+if ${opt_do}; then
+  cmd_copy="${cmd_copy} --log-file-format=\"%i %8'''l %n%L\" --log-file=${rsync_log_dir}/rsync_$(date +"%Y-%m-%d_%H-%M-%S").log"
+else
+  cmd_copy="${cmd_copy} --dry-run"
+fi
+
+cmd_copy="${cmd_common} ${cmd_copy} $@"
+cmd_check="${cmd_common} ${cmd_out_format} --info=all0 --whole-file --dry-run $@"
+
+if ${opt_print}; then
+  echo "Copy:"
+  echo "${cmd_copy}"
+  echo "Check:"
+  echo "${cmd_check}"
+  exit 0
+fi
+
+eval ${cmd_copy}
+
+if ${opt_do}; then
+  if ${opt_test}; then
+    echo -e "\e[38;5;220mCheck... (no output if checksums match)\e[0m"
+    eval ${cmd_check}
+  fi
+else
+  echo -e "\e[38;5;210mDRY RUN (nothing copied)\e[0m"
+fi
+
+exit 0
