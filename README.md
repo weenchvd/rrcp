@@ -1,5 +1,6 @@
 ## RRCP - rsync copier with checksum verification
 
+```bash
 Usage: rrcp [-cxqutdP] SRC [SRC]... DEST
 
 Options:
@@ -10,6 +11,7 @@ Options:
   -t        without test (without post-check)
   -d        do (disable DRY RUN)
   -P        print rsync command, do nothing
+```
 
 ## Examples
 
