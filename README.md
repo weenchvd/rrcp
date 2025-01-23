@@ -27,6 +27,10 @@ Copy the `src` directory to the `dest` directory:
 ```bash
 rrcp -d ~/src ~/dest/
 ```
+Copy the `name with spaces` directory to the `dest` directory:
+```bash
+rrcp -d "~/name with spaces" ~/dest/
+```
 Copy the directories `src1`, `src2`, `src3` to the directory `dest`:
 ```bash
 rrcp -d ~/src1 ~/src2 ~/src3 ~/dest/
