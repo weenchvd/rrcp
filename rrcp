@@ -53,8 +53,9 @@ fi
 
 # Assign the arguments to variables
 rsync_log_dir="/var/log/rsync"
+rsync_log=""
 
-cmd_common="rsync -ach --checksum-choice=xxh128"
+cmd_common="rsync -achAXH --checksum-choice=xxh128"
 cmd_out_format="--out-format=\"%i %8'''l %n%L\""
 
 cmd_copy=""
@@ -90,7 +91,8 @@ else
 fi
 
 if ${opt_do}; then
-  cmd_copy="${cmd_copy} --log-file-format=\"%i %8'''l %n%L\" --log-file=${rsync_log_dir}/rsync_$(date +"%Y-%m-%d_%H-%M-%S").log"
+  rsync_log="${rsync_log_dir}/rsync_$(date +"%Y-%m-%d_%H-%M-%S").log"
+  cmd_copy="${cmd_copy} --log-file-format=\"%i %8'''l %n%L\" --log-file=${rsync_log}"
 else
   cmd_copy="${cmd_copy} --dry-run"
 fi
@@ -115,6 +117,7 @@ fi
 eval ${cmd_copy}
 
 if ${opt_do}; then
+    echo -e "Log: \e[38;5;117m${rsync_log}\e[0m"
   if ${opt_test}; then
     echo -e "\e[38;5;220mCheck... (no output if checksums match)\e[0m"
     eval ${cmd_check}
