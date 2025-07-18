@@ -1,15 +1,16 @@
 #!/bin/bash
 
-version="1.0"
+version="1.1"
 
 # Function to display usage instructions
 usage() {
   echo "RRCP - rsync copier with checksum verification"
-  echo "Usage: $(basename $0) [-cxqutdPV] SRC [SRC]... DEST"
+  echo "Usage: $(basename $0) [-cxsqutdPV] SRC [SRC]... DEST"
   echo ""
   echo "Options:"
   echo "  -c        clone (mirror)"
   echo "  -x        use delta-xfer algorithm"
+  echo "  -s        skip based on checksum, not mod-time & size"
   echo "  -q        quiet (less output)"
   echo "  -u        mention unchanged names (more output)"
   echo "  -t        without test (without post-check)"
@@ -21,6 +22,7 @@ usage() {
 # Initialize variables
 opt_clone=false
 opt_whole_file=true
+opt_checksum=false
 opt_quiet=false
 opt_unchanged=false
 opt_test=true
@@ -28,10 +30,11 @@ opt_do=false
 opt_print=false
 
 # Process command line options using getopts
-while getopts ":cxqutdPV" opt; do
+while getopts ":cxsqutdPV" opt; do
   case ${opt} in
     c) opt_clone=true ;;
     x) opt_whole_file=false ;;
+    s) opt_checksum=true ;;
     q) opt_quiet=true ;;
     u) opt_unchanged=true ;;
     t) opt_test=false ;;
@@ -62,7 +65,7 @@ fi
 rsync_log_dir="/var/log/rsync"
 rsync_log=""
 
-cmd_common="rsync -achAXH --checksum-choice=xxh128"
+cmd_common="rsync -ahAXH --checksum-choice=xxh128"
 cmd_out_format="--out-format=\"%i %8'''l %n%L\""
 
 cmd_copy=""
@@ -110,24 +113,29 @@ for arg in "$@"; do
   quoted_args+=("\"$arg\"")
 done
 
-cmd_copy="${cmd_common} ${cmd_copy} ${quoted_args[@]}"
-cmd_check="${cmd_common} ${cmd_out_format} --info=all0 --whole-file --dry-run ${quoted_args[@]}"
+cmd_checksum=""
+if ${opt_checksum}; then
+  cmd_checksum=" --checksum"
+fi
+
+final_copy="${cmd_common}${cmd_checksum} ${cmd_copy} ${quoted_args[@]}"
+final_check="${cmd_common} --checksum ${cmd_out_format} --info=all0 --whole-file --dry-run ${quoted_args[@]}"
 
 if ${opt_print}; then
   echo "Copy:"
-  echo "${cmd_copy}"
+  echo "${final_copy}"
   echo "Check:"
-  echo "${cmd_check}"
+  echo "${final_check}"
   exit 0
 fi
 
-eval ${cmd_copy}
+eval ${final_copy}
 
 if ${opt_do}; then
     echo -e "Log: \e[38;5;117m${rsync_log}\e[0m"
   if ${opt_test}; then
     echo -e "\e[38;5;220mCheck... (no output if checksums match)\e[0m"
-    eval ${cmd_check}
+    eval ${final_check}
   fi
 else
   echo -e "\e[38;5;210mDRY RUN (nothing copied)\e[0m"

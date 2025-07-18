@@ -1,11 +1,12 @@
 ## RRCP - rsync copier with checksum verification
 
 ```bash
-Usage: rrcp [-cxqutdPV] SRC [SRC]... DEST
+Usage: rrcp [-cxsqutdPV] SRC [SRC]... DEST
 
 Options:
   -c        clone (mirror)
   -x        use delta-xfer algorithm
+  -s        skip based on checksum, not mod-time & size
   -q        quiet (less output)
   -u        mention unchanged names (more output)
   -t        without test (without post-check)
