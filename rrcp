@@ -1,9 +1,11 @@
 #!/bin/bash
 
+version="1.0"
+
 # Function to display usage instructions
 usage() {
   echo "RRCP - rsync copier with checksum verification"
-  echo "Usage: $(basename $0) [-cxqutdP] SRC [SRC]... DEST"
+  echo "Usage: $(basename $0) [-cxqutdPV] SRC [SRC]... DEST"
   echo ""
   echo "Options:"
   echo "  -c        clone (mirror)"
@@ -13,6 +15,7 @@ usage() {
   echo "  -t        without test (without post-check)"
   echo "  -d        do (disable DRY RUN)"
   echo "  -P        print rsync command, do nothing"
+  echo "  -V        version"
 }
 
 # Initialize variables
@@ -25,7 +28,7 @@ opt_do=false
 opt_print=false
 
 # Process command line options using getopts
-while getopts ":cxqutdP" opt; do
+while getopts ":cxqutdPV" opt; do
   case ${opt} in
     c) opt_clone=true ;;
     x) opt_whole_file=false ;;
@@ -34,6 +37,10 @@ while getopts ":cxqutdP" opt; do
     t) opt_test=false ;;
     d) opt_do=true ;;
     P) opt_print=true ;;
+    V)
+      echo "${version}"
+      exit 0
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       usage

@@ -1,7 +1,7 @@
 ## RRCP - rsync copier with checksum verification
 
 ```bash
-Usage: rrcp [-cxqutdP] SRC [SRC]... DEST
+Usage: rrcp [-cxqutdPV] SRC [SRC]... DEST
 
 Options:
   -c        clone (mirror)
@@ -11,6 +11,7 @@ Options:
   -t        without test (without post-check)
   -d        do (disable DRY RUN)
   -P        print rsync command, do nothing
+  -V        version
 ```
 
 ## Examples
